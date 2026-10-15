@@ -7,6 +7,7 @@
 ![Tech](https://img.shields.io/badge/HTML5%20%2B%20Canvas%202D-orange)
 ![Versions](https://img.shields.io/badge/versions-2-blueviolet)
 ![Skills](https://img.shields.io/badge/skills-12%20%2F%2020-7d5ba6)
+![License](https://img.shields.io/badge/license-MIT-2e8b57)
 
 本仓库包含**两个版本**，玩法框架一致、技能数量与强度不同：
 
@@ -404,6 +405,7 @@ python -m http.server 8000
 技能五子棋/
 ├── index.html              # 入口导航页（GitHub Pages 首页）：选择版本进入游戏
 ├── README.md               # 本文档
+├── LICENSE                 # MIT 开源许可证
 ├── v1-12skills/
 │   └── index.html          # v1 · 12 技能版（单文件游戏，约 1478 行 / 63 KB）
 └── v2-20skills/
@@ -542,9 +544,25 @@ A：不能。位置在你上回合落子周围 8 格中**随机**选取，且只
 
 ## 十三、许可证
 
-本仓库目前**未附带开源许可证文件**。在添加许可证之前，默认版权归作者所有，他人不可自由复制、修改或再分发。
+本项目采用 **MIT License** 开源，完整条款见仓库根目录的 [`LICENSE`](LICENSE) 文件。GitHub 会自动识别该文件，并在仓库页面右侧显示 **MIT** 许可标识。
 
-如果你希望别人可以自由使用、修改和分发本项目，建议在仓库根目录添加一个 `LICENSE` 文件（例如 [MIT License](https://choosealicense.com/licenses/mit/)）。添加后请把本节内容替换为对应许可证说明。
+```text
+MIT License
+
+Copyright (c) 2026 zwshn-zyt
+```
+
+简单说，MIT 允许你：
+
+- ✅ 自由使用、复制、修改、合并、发布、分发本项目
+- ✅ 再许可（sublicense），或将本项目的副本用于销售
+- ✅ 用于个人项目或商业项目
+
+唯一的条件是：**在副本或实质性部分中保留原始的版权声明与许可声明**（也就是保留 `LICENSE` 文件）。
+
+软件按「原样（AS IS）」提供，不附带任何形式的明示或暗示担保；作者不对因使用本项目而产生的任何索赔、损害或其他责任负责。
+
+> 如需更换版权署名（例如改用你的真实姓名或邮箱），请同时修改 `LICENSE` 文件与本节的 `Copyright (c)` 一行。
 
 ---
 
