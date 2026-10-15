@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>技能五子棋 · 自选技能版</title>
+<style>
+  :root{
+    --ink:#1f2733; --sub:#6b7787; --line:#e3e8ef; --card:#fff;
+    --accent:#c0392b; --ok:#2e8b57; --blue:#3b6ea5; --purple:#7d5ba6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+    background:radial-gradient(1200px 700px at 18% 0%,#f4f7fc 0%,#e7ecf4 45%,#dbe2ec 100%);
+    color:var(--ink); display:flex; align-items:center; justify-content:center;
+    padding:16px; min-height:100vh;
+  }
+  .wrap{width:100%; max-width:1120px}
+  h1{margin:0 0 3px; font-size:20px; letter-spacing:.4px}
+  h1 span{font-size:12px; color:var(--sub); font-weight:400; margin-left:8px; letter-spacing:0}
+  .sub{color:var(--sub); font-size:12.5px; margin-bottom:12px}
+  .main{display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap}
+  .boardBox{position:relative; background:var(--card); padding:11px; border-radius:16px;
+    box-shadow:0 10px 30px rgba(31,39,51,.14),0 2px 6px rgba(31,39,51,.06)}
+  canvas{display:block; border-radius:8px; cursor:pointer; touch-action:manipulation}
+  .panel{flex:1 1 320px; min-width:300px; background:var(--card); border-radius:16px; padding:15px;
+    box-shadow:0 10px 30px rgba(31,39,51,.14),0 2px 6px rgba(31,39,51,.06)}
+  .turnbar{display:flex; align-items:center; gap:9px; font-size:15px; font-weight:700}
+  .dot{width:15px;height:15px;border-radius:50%;flex:0 0 auto;box-shadow:inset 0 -2px 3px rgba(0,0,0,.25)}
+  .dot.b{background:radial-gradient(circle at 34% 30%,#7d8794,#0d1117 70%)}
+  .dot.w{background:radial-gradient(circle at 34% 30%,#fff,#c9cfd8 70%);border:1px solid #b9c1cc}
+  .hint{font-size:12.5px; color:var(--sub); min-height:17px; margin:5px 0 10px}
+  .hint.warn{color:var(--accent); font-weight:600}
+  .sect{font-size:11.5px; color:var(--sub); letter-spacing:1px; margin:11px 0 6px; display:flex;
+    justify-content:space-between; align-items:center}
+  .sect b{color:#41505f; letter-spacing:0; font-size:11.5px; font-weight:600}
+  .skills{display:grid; grid-template-columns:1fr 1fr; gap:7px}
+  .sk{position:relative; border:1px solid var(--line); background:#fafcff; border-radius:11px;
+    padding:8px 9px; text-align:left; cursor:pointer; font-family:inherit; font-size:12.5px; color:var(--ink);
+    transition:.13s; line-height:1.3}
+  .sk b{display:block; font-size:13px}
+  .sk em{font-style:normal; font-size:10.5px; color:var(--sub)}
+  .sk:hover:not(:disabled){border-color:#b9cdf0; background:#f2f7ff; transform:translateY(-1px)}
+  .sk.on{border-color:var(--blue); background:#eaf2ff; box-shadow:0 0 0 2px rgba(59,110,165,.16)}
+  .sk:disabled{opacity:.5; cursor:not-allowed}
+  .sk .cnt{position:absolute; top:6px; right:7px; font-size:10px; border-radius:9px; padding:0 6px;
+    line-height:15px; color:#fff; background:#9aa6b6}
+  .sk .cnt.ok{background:var(--ok)}
+  .btns{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:11px}
+  button.act{font-family:inherit; font-size:13px; font-weight:700; padding:9px 11px; border-radius:11px;
+    border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; transition:.13s}
+  button.act:hover:not(:disabled){transform:translateY(-1px); box-shadow:0 4px 12px rgba(31,39,51,.1)}
+  button.act.primary{background:linear-gradient(180deg,#3f79b8,#31618f); color:#fff; border-color:#31618f}
+  button.act.primary:disabled{background:#c3ccd8; border-color:#c3ccd8; cursor:not-allowed; transform:none; box-shadow:none}
+  button.act:disabled{opacity:.55; cursor:not-allowed}
+  .diff{display:flex; gap:6px}
+  .diff button{flex:1; font-family:inherit; font-size:12px; padding:6px 0; border-radius:9px;
+    border:1px solid var(--line); background:#fff; cursor:pointer; color:var(--sub); font-weight:600}
+  .diff button.on{background:#eef5ff; border-color:#a9c6ea; color:var(--blue)}
+  .log{margin-top:9px; height:140px; overflow:auto; border-top:1px dashed var(--line); padding-top:7px;
+    font-size:12px; color:#4a5666}
+  .log div{padding:2px 0; border-bottom:1px dotted #eef1f6}
+  .log .b{color:#111; font-weight:600}
+  .log .w{color:#7a8595; font-weight:600}
+  .log .fk{color:var(--purple)}
+  details{margin-top:10px; font-size:12.5px; color:#4a5666}
+  details summary{cursor:pointer; color:var(--blue); font-weight:600; outline:none}
+  details ul{margin:7px 0 0; padding-left:18px; line-height:1.7}
+  .toast{position:absolute; left:50%; top:42%; transform:translate(-50%,-50%) scale(.96);
+    background:rgba(24,30,40,.92); color:#fff; padding:10px 17px; border-radius:12px; font-size:13.5px;
+    font-weight:600; opacity:0; pointer-events:none; transition:.18s; white-space:nowrap; z-index:6}
+  .toast.show{opacity:1; transform:translate(-50%,-50%) scale(1)}
+  .over{position:absolute; inset:11px; border-radius:8px; background:rgba(255,255,255,.88);
+    backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; flex-direction:column;
+    gap:13px; z-index:5; text-align:center; padding:18px}
+  .over.show{display:flex}
+  .over .big{font-size:22px; font-weight:800}
+  .over .small{font-size:13px; color:var(--sub)}
+  /* 选技能弹层 */
+  .modal{position:fixed; inset:0; background:rgba(20,26,36,.55); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:20; padding:20px}
+  .modal.show{display:flex}
+  .sheet{background:#fff; border-radius:18px; max-width:820px; width:100%; padding:20px 22px;
+    box-shadow:0 24px 60px rgba(10,15,25,.35); max-height:92vh; overflow:auto}
+  .sheet h2{margin:0 0 4px; font-size:18px}
+  .sheet p{margin:0 0 14px; color:var(--sub); font-size:12.5px}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:9px}
+  @media (max-width:700px){ .grid{grid-template-columns:repeat(2,1fr)} }
+  .card{border:1.5px solid var(--line); border-radius:13px; padding:10px 11px; cursor:pointer;
+    background:#fbfcfe; transition:.13s; position:relative}
+  .card:hover{border-color:#b9cdf0; transform:translateY(-1px)}
+  .card.on{border-color:var(--blue); background:#edf4ff; box-shadow:0 0 0 2px rgba(59,110,165,.15)}
+  .card .nm{font-weight:800; font-size:13.5px; display:flex; justify-content:space-between; align-items:center}
+  .card .cd{font-size:10px; color:#fff; background:var(--purple); border-radius:8px; padding:1px 6px}
+  .card .ds{font-size:11.5px; color:#5a6675; margin-top:5px; line-height:1.45}
+  .card.locked{opacity:.45; cursor:not-allowed}
+  .sheetFoot{display:flex; justify-content:space-between; align-items:center; margin-top:16px; gap:12px}
+  .sheetFoot .cnt2{font-size:13px; color:var(--sub)}
+  .sheetFoot .cnt2 b{color:var(--blue); font-size:15px}
+  .sheetFoot .ai{font-size:12px; color:var(--sub); text-align:right; line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>技能五子棋 <span>Skill Gomoku · 自选技能 + CD</span></h1>
+  <div class="sub">共 <b>20</b> 个技能：你自选 <b>3</b> 个，AI 按难度带 <b>4 / 6 / 8</b> 个且会算杀。技能按 <b>冷却回合（CD）</b> 循环使用。你执 <b>黑</b> 先手。</div>
+
+  <div class="main">
+    <div class="boardBox">
+      <canvas id="board"></canvas>
+      <div class="toast" id="toast"></div>
+      <div class="over" id="over">
+        <div class="big" id="overTitle"></div>
+        <div class="small" id="overSub"></div>
+        <div style="display:flex; gap:8px">
+          <button class="act primary" style="min-width:132px" onclick="showPick()">再来一局</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="turnbar"><span class="dot b" id="turnDot"></span><span id="turnText">你的回合</span></div>
+      <div class="hint" id="hint">点棋盘落子；想用技能就先点下面的技能键。</div>
+
+      <div class="sect">对战模式</div>
+      <div class="diff" id="mode">
+        <button data-m="ai">人机对战</button><button data-m="pvp">本地双人</button>
+      </div>
+
+      <div class="sect" id="mineSect">我的技能 <b id="cdNote">CD 按自己的回合递减</b></div>
+      <div class="skills" id="skills"></div>
+
+      <div class="sect" id="foeSect">对手技能 <b id="foeCount"></b></div>
+      <div class="skills" id="foeSkills"></div>
+
+      <div class="btns">
+        <button class="act primary" id="btnEnd">结束回合</button>
+        <button class="act" id="btnUndo">清空本回合</button>
+        <button class="act" id="btnNew">重开 / 换技能</button>
+        <button class="act" id="btnResign">认输</button>
+      </div>
+
+      <div class="sect" id="diffSect">AI 强度 <b>技能更多 + 会算杀</b></div>
+      <div class="diff" id="diff">
+        <button data-d="1">简单 · 4技</button><button data-d="2">普通 · 6技</button><button data-d="3">困难 · 8技</button>
+      </div>
+
+      <div class="sect">对局记录</div>
+      <div class="log" id="log"></div>
+
+      <details>
+        <summary>规则与全部技能</summary>
+        <ul id="ruleList"></ul>
+      </details>
+    </aside>
+  </div>
+</div>
+
+<!-- 选技能弹层 -->
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h2 id="pickTitle">选择你的 3 个技能</h2>
+    <p id="pickDesc">技能不再是一次性，而是按 <b>冷却回合（CD）</b> 循环使用：用完进入 CD，每过自己一个回合减 1。选 3 个带入对局。</p>
+    <div class="grid" id="pickGrid"></div>
+    <div class="sheetFoot">
+      <div class="cnt2">已选 <b id="pickCount">0</b> / 3</div>
+      <div class="ai">对手技能：<span id="aiPickTxt">—</span></div>
+      <div><button class="act primary" id="btnStart" disabled style="min-width:132px">开始对局</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================== 常量 ==================== */
+const N = 15, PAD = 30, CELL = 38, RAD = CELL * 0.445;
+const SIZE = PAD * 2 + CELL * (N - 1);
+const LETTERS = "ABCDEFGHIJKLMNO";
+const DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+/* ==================== 技能库（20 个） ====================
+   cd：冷却回合（按自己的回合递减）
+   picks：需要玩家点选的格子类型，按顺序
+   noStone：使用后本回合不再落常规子（由技能本身完成落子）
+   cond：使用前置条件
+   ---- 强度越高 CD 越长：4~6 基础 / 7~9 进阶 / 10~15 大招 ---- */
+const SKILLS = {
+  /* ---------- 基础 ---------- */
+  "封锁":     { cd:4,  short:"封对方一格",        picks:["empty"],        ds:"指定空点，对方下一回合不能落于该点。" },
+  "双落":     { cd:5,  short:"本回合落两子",      picks:["empty"],        ds:"本回合额外落一子，共两子同时生效，可一手做出双杀。" },
+  "挪移":     { cd:5,  short:"移动己方一子",      picks:["own","empty"],  ds:"把己方一枚棋子移到任意空点；若因此成五直接获胜。" },
+  "夺石":     { cd:6,  short:"移除对方一子",      picks:["opp"],          ds:"移除对方任意一子（带护盾的子免疫）。" },
+  "反制":     { cd:6,  short:"夺一子 + 照常落子", picks:["opp"], cond:"oppThreat", ds:"仅当对方已形成活三及以上威胁时可用：夺其一子，且本回合照常落子。" },
+  "壁垒":     { cd:6,  short:"护住一圈禁地",      picks:["own"],          ds:"以己方一枚棋子为中心的 8 个邻格，对方接下来 2 回合都不能落子。" },
+  "克隆":     { cd:6,  short:"复制己方一子",      picks:["own","empty"],  ds:"在己方一枚棋子的相邻空点复制出一枚同样的棋子（等同免费多一子）。" },
+  /* ---------- 进阶 ---------- */
+  "十字封印": { cd:7,  short:"封十字 9 格",       picks:["empty"],        ds:"以目标格为中心、上下左右各 2 格共 9 格，对方接下来 2 回合全部不能落。" },
+  "冰封":     { cd:7,  short:"冻一线最多 3 子",   picks:["opp"],          ds:"冰冻目标子以及同一直线上与它相邻的对方棋子（最多 3 枚），2 回合内不计入连子。" },
+  "铁索":     { cd:8,  short:"连环冻住一片",      picks:["opp"],          ds:"以目标子为中心、上下左右相邻的对方棋子全部用铁索锁住 2 回合（不计连子）。" },
+  "换位":     { cd:7,  short:"与对方交换一子",    picks:["own","opp"],    ds:"己方一子与对方一子的位置互换（护盾子免疫）。" },
+  "净化":     { cd:7,  short:"解除己方负面状态",  picks:[],               ds:"清除己方全部棋子的冰冻/铁索状态，并解除施加在己方身上的封锁区域。" },
+  "蓄力":     { cd:7,  short:"照常落子 + CD−2",   picks:[],               ds:"本回合照常落子，同时让全部技能 CD 立即减 2（不再放弃落子）。" },
+  "回溯":     { cd:8,  short:"撤对方最近两子",    picks:[],               ds:"把对方最近两回合落下的棋子拿掉（最多 2 枚）。" },
+  "墓碑":     { cd:7,  short:"下回合周围生一子",  picks:[],               ds:"本回合照常落子；下回合开始时，在你本回合落子周围的随机空点自动生成一枚己方棋子。" },
+  "献祭":     { cd:8,  short:"舍一子换多落一子",  picks:["own","empty"],  ds:"移除己方一枚棋子，本回合改为落两子（用一枚废子换一次额外的落子机会）。" },
+  /* ---------- 大招 ---------- */
+  "连弩":     { cd:9,  short:"一次共线落三子",    picks:["empty","empty","empty"], noStone:true, ds:"本回合不落常规子，改为在一条直线上一次落下相邻三子（可直接造活三/冲四）。" },
+  "夺魂":     { cd:10, short:"夺一子并冻周围",    picks:["opp"],          ds:"移除目标子，并把与它上下左右相邻的对方棋子全部冰冻 2 回合。" },
+  "护盾":     { cd:10, short:"整局永久保护一子",  picks:["own"],          ds:"指定己方一枚棋子获得整局永久保护：免疫夺石、换位、冰封、铁索、夺魂，直到对局结束。" },
+  "天雷":     { cd:15, short:"劈掉成串的敌子",    picks:["opp"],          ds:"天雷落下：以目标子为中心 5×5 范围内，所有连在一起（≥2 子）的对方棋子全部被劈掉，孤立子幸免。" },
+};
+const SKILL_NAMES = Object.keys(SKILLS);
+const AI_POOL = SKILL_NAMES.slice();
+
+/* ==================== 画布 ==================== */
+const cv = document.getElementById("board");
+const ctx = cv.getContext("2d");
+const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+cv.width = SIZE * dpr; cv.height = SIZE * dpr;
+cv.style.width = SIZE + "px"; cv.style.height = SIZE + "px";
+ctx.scale(dpr, dpr);
+const PX = i => PAD + i * CELL;
+const key = (r, c) => r + "," + c;
+
+/* ==================== 状态 ==================== */
+let board, turn, cd, loadout, bans, frozen, shields, stones, over, winner, winLine;
+let tombstones = { B: null, W: null };   // 墓碑：下次轮到该方时在其落子周围生一子
+let lastMove, lastCell, pending, targeting, difficulty = 3, thinking = false;
+let mode = "ai";                      // "ai" = 人机对战 | "pvp" = 本地双人
+/* 当前由"人类"操作的一方：人机模式固定执黑；双人模式跟随回合 */
+function act() { return mode === "pvp" ? turn : "B"; }
+
+function startGame(loB, loW, diff) {
+  difficulty = diff || difficulty;
+  board = Array.from({ length: N }, () => Array(N).fill(null));
+  turn = "B"; over = false; winner = null; winLine = []; lastMove = null; lastCell = null;
+  bans = {}; frozen = {}; shields = {}; stones = { B: [], W: [] };
+  tombstones = { B: null, W: null };
+  cd = { B: {}, W: {} };
+  loadout = { B: loB.slice(), W: loW.slice() };
+  SKILL_NAMES.forEach(k => { cd.B[k] = 0; cd.W[k] = 0; });
+  resetPending();
+  document.getElementById("log").innerHTML = "";
+  document.getElementById("over").classList.remove("show");
+  log(`开局：你带【${loB.join("、")}】，我带【${loW.join("、")}】`);
+  draw(); updateUI();
+}
+
+function resetPending() { pending = { stone: null, extra: null, skill: null }; targeting = null; }
+
+/* ==================== 有效棋盘（冰封子不计连子） ==================== */
+function eff(r, c) {
+  const v = board[r][c];
+  if (!v) return null;
+  return frozen[key(r, c)] > 0 ? null : v;
+}
+function bannedFor(side, r, c) {
+  const b = bans[key(r, c)];
+  return !!(b && b.side === side && b.turns > 0);
+}
+function canPlay(side, r, c) {
+  return !board[r][c] && !bannedFor(side, r, c);
+}
+function shielded(r, c) { return shields[key(r, c)] !== undefined; }   // -1 表示整局永久护盾
+
+/* ==================== 绘制 ==================== */
+function draw() {
+  const g = ctx.createLinearGradient(0, 0, SIZE, SIZE);
+  g.addColorStop(0, "#f1cf95"); g.addColorStop(.5, "#e7bb72"); g.addColorStop(1, "#d7a256");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, SIZE, SIZE);
+
+  ctx.strokeStyle = "rgba(74,42,8,.72)"; ctx.lineWidth = 1;
+  for (let i = 0; i < N; i++) {
+    const p = Math.round(PX(i)) + .5;
+    ctx.beginPath(); ctx.moveTo(PAD, p); ctx.lineTo(SIZE - PAD, p); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(p, PAD); ctx.lineTo(p, SIZE - PAD); ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(74,42,8,.8)";
+  [[3, 3], [3, 11], [11, 3], [11, 11], [7, 7]].forEach(([r, c]) => {
+    ctx.beginPath(); ctx.arc(PX(c), PX(r), 3.4, 0, 7); ctx.fill();
+  });
+  ctx.fillStyle = "rgba(70,44,14,.72)";
+  ctx.font = "11px ui-monospace,Consolas,monospace";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (let i = 0; i < N; i++) {
+    ctx.fillText(LETTERS[i], PX(i), PAD * .5 - 1);
+    ctx.fillText(LETTERS[i], PX(i), SIZE - PAD * .5 + 1);
+    ctx.fillText(String(N - i), PAD * .5 - 1, PX(i));
+    ctx.fillText(String(N - i), SIZE - PAD * .5 + 1, PX(i));
+  }
+
+  // 封锁 / 天雷 区域
+  for (const k in bans) {
+    if (bans[k].turns <= 0) continue;
+    const [r, c] = k.split(",").map(Number);
+    const isFoe = bans[k].side === "B";   // 封的是黑=我方，画成对我不利的红块
+    ctx.save();
+    ctx.fillStyle = isFoe ? "rgba(192,57,43,.17)" : "rgba(59,110,165,.15)";
+    ctx.fillRect(PX(c) - CELL / 2 + 2, PX(r) - CELL / 2 + 2, CELL - 4, CELL - 4);
+    ctx.strokeStyle = isFoe ? "rgba(192,57,43,.55)" : "rgba(59,110,165,.5)";
+    ctx.setLineDash([3, 3]); ctx.lineWidth = 1.4;
+    ctx.strokeRect(PX(c) - CELL / 2 + 2, PX(r) - CELL / 2 + 2, CELL - 4, CELL - 4);
+    ctx.restore();
+  }
+
+  // 棋子
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    if (!board[r][c]) continue;
+    const fz = frozen[key(r, c)] > 0;
+    stone(PX(c), PX(r), board[r][c], fz ? .42 : 1);
+    if (fz) {
+      ctx.save(); ctx.fillStyle = "rgba(125,91,166,.95)";
+      ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("❄", PX(c), PX(r) + 1); ctx.restore();
+    }
+    if (shields[key(r, c)] !== undefined) {
+      const perm = shields[key(r, c)] < 0;
+      ctx.save();
+      ctx.strokeStyle = perm ? "rgba(46,139,87,.98)" : "rgba(46,139,87,.75)";
+      ctx.lineWidth = perm ? 3 : 2.2;
+      ctx.beginPath(); ctx.arc(PX(c), PX(r), RAD * 1.02, 0, 7); ctx.stroke();
+      if (perm) { ctx.beginPath(); ctx.arc(PX(c), PX(r), RAD * 1.22, 0, 7); ctx.stroke(); }
+      ctx.restore();
+    }
+  }
+
+  if (!over) drawPending();
+
+  if (lastMove && board[lastMove[0]][lastMove[1]]) {
+    ctx.save(); ctx.globalAlpha = .9;
+    ctx.strokeStyle = "#ff5d5d"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(PX(lastMove[1]), PX(lastMove[0]), RAD * .42, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
+  if (winLine.length >= 5) {
+    const a = winLine[0], b = winLine[winLine.length - 1];
+    ctx.save(); ctx.strokeStyle = "rgba(214,40,40,.9)"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(PX(a[1]), PX(a[0])); ctx.lineTo(PX(b[1]), PX(b[0])); ctx.stroke();
+    ctx.restore();
+  }
+  drawCursor();
+}
+
+function stone(x, y, color, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.beginPath(); ctx.arc(x + 1.5, y + 2.5, RAD, 0, 7);
+  ctx.fillStyle = "rgba(60,35,10,.26)"; ctx.fill();
+  const g = ctx.createRadialGradient(x - RAD * .34, y - RAD * .38, RAD * .12, x, y, RAD * 1.06);
+  if (color === "B") { g.addColorStop(0, "#8b95a3"); g.addColorStop(.42, "#2b323d"); g.addColorStop(1, "#05070a"); }
+  else { g.addColorStop(0, "#fff"); g.addColorStop(.6, "#f2f4f7"); g.addColorStop(1, "#c6ccd5"); }
+  ctx.beginPath(); ctx.arc(x, y, RAD, 0, 7); ctx.fillStyle = g; ctx.fill();
+  if (color === "W") { ctx.strokeStyle = "rgba(140,150,164,.75)"; ctx.lineWidth = 1; ctx.stroke(); }
+  ctx.restore();
+}
+
+function ring(r, c, color, dash) {
+  ctx.save(); ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.arc(PX(c), PX(r), RAD * .95, 0, 7); ctx.stroke(); ctx.restore();
+}
+
+function drawPending() {
+  const p = pending;
+  const me = act(), foe = otherSide(me);
+  const tag = (r, c, txt, col) => {
+    ctx.save(); ctx.fillStyle = col; ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, PX(c), PX(r)); ctx.restore();
+  };
+  const cross = (r, c) => {
+    ctx.save(); ctx.strokeStyle = "#d62828"; ctx.lineWidth = 3.2; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(PX(c) - RAD * .5, PX(r) - RAD * .5); ctx.lineTo(PX(c) + RAD * .5, PX(r) + RAD * .5);
+    ctx.moveTo(PX(c) + RAD * .5, PX(r) - RAD * .5); ctx.lineTo(PX(c) - RAD * .5, PX(r) + RAD * .5);
+    ctx.stroke(); ctx.restore();
+  };
+  const ghost = (r, c, color) => stone(PX(c), PX(r), color, .5);
+  if (p.skill) {
+    const s = p.skill;
+    const P = s.picks;
+    if (s.name === "夺石" && P[0]) { ring(P[0][0], P[0][1], "#d62828", [4, 3]); cross(P[0][0], P[0][1]); }
+    if (s.name === "冰封" && P[0]) {
+      lineRun(foe, P[0][0], P[0][1], 3).forEach(([r, c]) => {
+        ring(r, c, "#7d5ba6", [4, 3]); tag(r, c, "❄", "rgba(125,91,166,.95)");
+      });
+    }
+    if (s.name === "铁索" && P[0]) {
+      const cells = [P[0]].concat(neigh4(P[0][0], P[0][1]).filter(([r, c]) => board[r][c] === foe));
+      cells.forEach(([r, c]) => { ring(r, c, "#7d5ba6", [4, 3]); tag(r, c, "⛓", "rgba(125,91,166,.95)"); });
+    }
+    if (s.name === "夺魂" && P[0]) {
+      ring(P[0][0], P[0][1], "#d62828", [4, 3]); cross(P[0][0], P[0][1]);
+      neigh4(P[0][0], P[0][1]).filter(([r, c]) => board[r][c] === foe)
+        .forEach(([r, c]) => tag(r, c, "❄", "rgba(125,91,166,.95)"));
+    }
+    if (s.name === "天雷" && P[0]) {
+      const [r0, c0] = P[0];
+      for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) {
+        const r = r0 + a, c = c0 + b;
+        if (inB(r, c)) ring(r, c, "rgba(214,40,40,.55)", [3, 4]);
+      }
+      thunderVictims(r0, c0, foe).forEach(([r, c]) => { ring(r, c, "#d62828", [4, 3]); cross(r, c); });
+      tag(r0, c0, "雷", "rgba(214,40,40,.95)");
+    }
+    if (s.name === "护盾" && P[0]) { ring(P[0][0], P[0][1], "#2e8b57", [4, 3]); tag(P[0][0], P[0][1], "盾", "rgba(46,139,87,.95)"); }
+    if (s.name === "壁垒" && P[0]) {
+      ring(P[0][0], P[0][1], "#2e8b57", [4, 3]);
+      neigh8(P[0][0], P[0][1]).forEach(([r, c]) => ring(r, c, "rgba(46,139,87,.55)", [3, 4]));
+    }
+    if (s.name === "换位" && P.length) {
+      P.forEach(([r, c], i) => ring(r, c, i === 0 ? "#2e8b57" : "#d62828", [4, 3]));
+      if (P.length === 2) {
+        ctx.save(); ctx.strokeStyle = "#3b6ea5"; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(PX(P[0][1]), PX(P[0][0])); ctx.lineTo(PX(P[1][1]), PX(P[1][0]));
+        ctx.stroke(); ctx.restore();
+      }
+    }
+    if (s.name === "挪移" && P[0]) {
+      ring(P[0][0], P[0][1], "#d62828", [4, 3]);
+      if (P[1]) { ring(P[1][0], P[1][1], "#2e8b57", [4, 3]); ghost(P[1][0], P[1][1], board[P[0][0]][P[0][1]]); }
+    }
+    if (s.name === "克隆" && P[0]) {
+      ring(P[0][0], P[0][1], "#2e8b57", [4, 3]);
+      neigh8(P[0][0], P[0][1]).forEach(([r, c]) => { if (canPlay(me, r, c)) ring(r, c, "rgba(46,139,87,.5)", [3, 4]); });
+      if (P[1]) { ring(P[1][0], P[1][1], "#2e8b57", [4, 3]); ghost(P[1][0], P[1][1], me); }
+    }
+    if (s.name === "献祭" && P[0]) {
+      ring(P[0][0], P[0][1], "#d62828", [4, 3]); cross(P[0][0], P[0][1]);
+      if (P[1]) ghost(P[1][0], P[1][1], me);
+    }
+    if (s.name === "连弩" && P.length) {
+      P.forEach(([r, c]) => ring(r, c, "#3b6ea5", [4, 3]));
+      if (P.length >= 2) {
+        const a = P[0], b = P[P.length - 1];
+        ctx.save(); ctx.strokeStyle = "#3b6ea5"; ctx.lineWidth = 2.2; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(PX(a[1]), PX(a[0])); ctx.lineTo(PX(b[1]), PX(b[0])); ctx.stroke(); ctx.restore();
+      }
+    }
+    if (s.name === "封锁" && P[0]) { ring(P[0][0], P[0][1], "#8e44ad", [3, 3]); tag(P[0][0], P[0][1], "封", "rgba(142,68,173,.95)"); }
+    if (s.name === "十字封印" && P[0]) {
+      crossCells9(P[0][0], P[0][1]).forEach(([r, c]) => ring(r, c, "#8e44ad", [3, 3]));
+      tag(P[0][0], P[0][1], "封", "rgba(142,68,173,.95)");
+    }
+  }
+  if (p.stone) stone(PX(p.stone[1]), PX(p.stone[0]), me, .55);
+  if (p.extra) stone(PX(p.extra[1]), PX(p.extra[0]), me, .55);
+}
+
+function drawCursor() {
+  if (!lastCell) return;
+  const [r, c] = lastCell;
+  ctx.save(); ctx.strokeStyle = "rgba(59,110,165,.95)"; ctx.lineWidth = 2; ctx.setLineDash([3, 3]);
+  ctx.strokeRect(PX(c) - CELL / 2 + 3, PX(r) - CELL / 2 + 3, CELL - 6, CELL - 6);
+  ctx.restore();
+}
+
+/* ==================== UI ==================== */
+let toastTimer;
+function say(m, warn) {
+  const el = document.getElementById("toast");
+  el.textContent = m; el.classList.add("show"); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 1550);
+}
+function log(html) {
+  const el = document.getElementById("log");
+  const d = document.createElement("div"); d.innerHTML = html;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+const sideName = s => s === "B" ? "你" : "我";
+
+function renderSkillBtns(box, side) {
+  const me = act();
+  box.innerHTML = "";
+  loadout[side].forEach(name => {
+    const sp = SKILLS[name], left = cd[side][name];
+    const usable = left <= 0;
+    const b = document.createElement("button");
+    b.className = "sk" + (targeting && targeting.name === name ? " on" : "");
+    // 只有"当前人类操作方"的技能键可点：人机模式是黑方，双人模式跟随回合
+    if (side === me) {
+      b.disabled = over || turn !== me || !usable || !!pending.skill;
+      b.onclick = () => beginSkill(name);
+    } else b.disabled = true;
+    b.innerHTML = `<b>${name}</b><em>${sp.short}</em>
+      <span class="cnt ${usable ? "ok" : ""}">${usable ? "可用" : "CD " + left}</span>`;
+    box.appendChild(b);
+  });
+}
+
+function updateUI() {
+  const me = act(), foe = otherSide(me);
+  const dot = document.getElementById("turnDot"), t = document.getElementById("turnText");
+  const hint = document.getElementById("hint");
+  dot.className = "dot " + (turn === "B" ? "b" : "w");
+  if (over) t.textContent = "对局结束";
+  else if (mode === "pvp") t.textContent = (turn === "B" ? "黑方回合" : "白方回合");
+  else t.textContent = turn === "B" ? "你的回合" : "我的回合";
+
+  hint.className = "hint" + (targeting ? " warn" : "");
+  if (over) hint.textContent = "点「再来一局」重新选技能开局。";
+  else if (targeting) hint.textContent = "技能 · " + targeting.hint;
+  else if (mode === "ai" && turn === "W") hint.textContent = "我在思考…";
+  else if (pending.skill && SKILLS[pending.skill.name].noStone) hint.textContent = "【蓄力】已就绪，直接点「结束回合」。";
+  else if (pending.stone) hint.textContent = "落点已选，可再用技能或点「结束回合」。";
+  else hint.textContent = "点棋盘落子；想用技能就先点技能键。";
+
+  // 技能面板：人机模式固定上=我/下=AI；双人模式上=当前回合方
+  const mineSect = document.getElementById("mineSect"), foeSect = document.getElementById("foeSect");
+  if (mode === "pvp") {
+    mineSect.innerHTML = `轮到 <b style="color:${me === "B" ? "#1f2733" : "#7a8595"}">${me === "B" ? "黑方" : "白方"}</b> 的技能`;
+    foeSect.innerHTML = `<b>${foe === "B" ? "黑方" : "白方"}</b> 的技能`;
+  } else {
+    mineSect.innerHTML = `我的技能 <b id="cdNote">CD 按自己的回合递减</b>`;
+    foeSect.innerHTML = `对手技能 <b style="color:#7d5ba6">（${loadout.W.length} 个）</b>`;
+  }
+  renderSkillBtns(document.getElementById("skills"), me);
+  renderSkillBtns(document.getElementById("foeSkills"), foe);
+  document.getElementById("btnEnd").disabled = over || turn !== me ||
+    (!pending.stone && !(pending.skill && SKILLS[pending.skill.name].noStone));
+  document.getElementById("btnUndo").disabled = over || turn !== me ||
+    (!pending.stone && !pending.extra && !pending.skill);
+  document.querySelectorAll("#diff button").forEach(b => {
+    b.classList.toggle("on", Number(b.dataset.d) === difficulty);
+    b.disabled = !!thinking;
+  });
+}
+
+const SKILL_SPEC_HINT = {
+  "双落": ["选择额外落子的空点"],
+  "夺石": ["点选要移除的对方棋子"],
+  "挪移": ["先点自己的棋子", "再点要移到的空点"],
+  "封锁": ["点选要封锁的空点"],
+  "十字封印": ["点选十字中心格（上下左右各 2 格）"],
+  "换位": ["先点自己的一枚棋子", "再点要交换的对方棋子"],
+  "冰封": ["点选要冰冻的对方棋子（同线相邻最多再冻 2 枚）"],
+  "铁索": ["点选中心棋子（与它相邻的敌子一起锁）"],
+  "夺魂": ["点选要夺取的对方棋子"],
+  "回溯": [],
+  "净化": [],
+  "蓄力": [],
+  "墓碑": [],
+  "反制": ["点选要夺走的对方棋子"],
+  "护盾": ["点选要整局保护的己方棋子"],
+  "壁垒": ["点选要护住的己方棋子（周围一圈变禁地）"],
+  "克隆": ["先点要复制的己方棋子", "再点它相邻的空点"],
+  "献祭": ["先点要舍弃的己方棋子", "再点额外落子的空点"],
+  "连弩": ["点第一个空点", "点第二个（须与上一个相邻成线）", "点第三个（须连成一线）"],
+  "天雷": ["点选雷电中心（5×5 内成串敌子全灭）"],
+};
+
+function condOK(name, side) {
+  const opp = side === "B" ? "W" : "B";
+  if (SKILLS[name].cond === "oppThreat") return hasThreat(opp, 3);
+  return true;
+}
+
+function beginSkill(name) {
+  const me = act();
+  if (over || turn !== me || cd[me][name] > 0 || pending.skill) return;
+  if (!condOK(name, me)) { say("【" + name + "】条件不满足：对方尚无活三以上威胁", true); return; }
+  if (name === "回溯") { pending.skill = { name, picks: [] }; say("【回溯】已就绪"); draw(); updateUI(); return; }
+  targeting = { name, step: 0, picks: [], hint: SKILL_SPEC_HINT[name][0] };
+  draw(); updateUI();
+}
+
+function skillPick(r, c) {
+  const me = act(), foe = otherSide(me);
+  const tg = targeting;
+  const need = SKILLS[tg.name].picks[tg.step];
+  if (need === "empty" && !canPlay(me, r, c)) { say("请选一个可落子的空点", true); return; }
+  if (need === "opp" && board[r][c] !== foe) { say("请点一枚对方的棋子", true); return; }
+  if (need === "opp" && shielded(r, c)) { say("该子有护盾，无法选中", true); return; }
+  if (need === "own" && board[r][c] !== me) { say("请点一枚你自己的棋子", true); return; }
+  if (tg.name === "挪移" && tg.step === 1 && tg.picks[0] && tg.picks[0][0] === r && tg.picks[0][1] === c) {
+    say("不能移到原位", true); return;
+  }
+  // 克隆：复制点必须与原棋子相邻
+  if (tg.name === "克隆" && tg.step === 1) {
+    const [r0, c0] = tg.picks[0];
+    if (Math.abs(r0 - r) > 1 || Math.abs(c0 - c) > 1) { say("复制点必须与原棋子相邻（含斜向）", true); return; }
+  }
+  // 连弩：三子必须共线且相邻
+  if (tg.name === "连弩" && tg.step >= 1) {
+    const [r0, c0] = tg.picks[tg.step - 1];
+    const dr = r - r0, dc = c - c0;
+    if (Math.abs(dr) > 1 || Math.abs(dc) > 1 || (dr === 0 && dc === 0)) { say("必须与上一子相邻", true); return; }
+    if (tg.step === 2) {
+      const [ra, ca] = tg.picks[0];
+      const d1r = r0 - ra, d1c = c0 - ca;
+      if (dr !== d1r || dc !== d1c) { say("三子必须在同一直线上连成一线", true); return; }
+    }
+  }
+  // 献祭：不能舍弃刚选过的额外落点
+  if (tg.name === "献祭" && tg.step === 1) {
+    const [r0, c0] = tg.picks[0];
+    if (r0 === r && c0 === c) { say("额外落点不能与被舍弃的棋子同格", true); return; }
+  }
+  tg.picks.push([r, c]); tg.step++;
+  if (tg.step >= SKILLS[tg.name].picks.length) {
+    pending.skill = { name: tg.name, picks: tg.picks.slice() };
+    if (tg.name === "双落") pending.extra = tg.picks[0];
+    if (tg.name === "献祭") { pending.extra = tg.picks[1]; targeting = null; }
+    targeting = null;
+    say("技能【" + pending.skill.name + "】已就绪");
+  } else tg.hint = SKILL_SPEC_HINT[tg.name][tg.step];
+}
+
+cv.addEventListener("click", e => {
+  const me = act();
+  if (over || turn !== me || thinking) return;
+  const rect = cv.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (SIZE / rect.width);
+  const y = (e.clientY - rect.top) * (SIZE / rect.height);
+  const c = Math.round((x - PAD) / CELL), r = Math.round((y - PAD) / CELL);
+  if (r < 0 || r >= N || c < 0 || c >= N) return;
+  if (Math.hypot(x - PX(c), y - PX(r)) > CELL * .62) return;
+  lastCell = [r, c];
+  if (targeting) { skillPick(r, c); draw(); updateUI(); return; }
+  if (pending.extra && pending.extra[0] === r && pending.extra[1] === c) { say("这已是【双落】的落点", true); draw(); updateUI(); return; }
+  if (!canPlay(me, r, c)) { say(board[r][c] ? "这里有子了" : "该点被封锁", true); draw(); updateUI(); return; }
+  pending.stone = [r, c]; draw(); updateUI();
+});
+
+document.getElementById("btnUndo").onclick = () => {
+  if (over || turn !== act()) return;
+  resetPending(); draw(); updateUI(); say("已清空本回合操作");
+};
+document.getElementById("btnEnd").onclick = () => {
+  const me = act();
+  if (over || turn !== me) return;
+  if (!pending.stone && !(pending.skill && SKILLS[pending.skill.name].noStone)) return;
+  const plan = { stones: pending.extra ? [pending.stone, pending.extra] : (pending.stone ? [pending.stone] : []), skill: pending.skill };
+  resetPending();
+  const res = applyTurn(me, plan);
+  if (res.win) { finish(me); return; }
+  draw(); updateUI();
+  if (mode === "ai") {
+    thinking = true; updateUI();
+    setTimeout(() => { thinking = false; aiTurn(); }, 260);
+  }
+};
+document.getElementById("btnNew").onclick = () => showPick();
+document.getElementById("btnResign").onclick = () => { finish(otherSide(act()), true); };
+document.querySelectorAll("#diff button").forEach(b => b.onclick = () => {
+  difficulty = Number(b.dataset.d); updateUI(); say("AI 强度：" + b.textContent);
+});
+document.querySelectorAll("#mode button").forEach(b => b.onclick = () => {
+  if (b.dataset.m === mode) return;
+  mode = b.dataset.m;
+  document.querySelectorAll("#mode button").forEach(x => x.classList.toggle("on", x.dataset.m === mode));
+  document.getElementById("diffSect").style.display = mode === "ai" ? "" : "none";
+  document.getElementById("diff").style.display = mode === "ai" ? "" : "none";
+  showPick();
+});
+
+/* ==================== 落子 / 清格（冰冻与护盾绑定在棋子上，不跟着格子走） ==================== */
+function placeStone(side, r, c) {
+  board[r][c] = side;
+  delete frozen[key(r, c)];
+  delete shields[key(r, c)];
+  stones[side].push([r, c]);
+  lastMove = [r, c];
+}
+function clearCell(r, c) {
+  board[r][c] = null;
+  delete frozen[key(r, c)];
+  delete shields[key(r, c)];
+}
+
+/* ==================== 回合结算 ==================== */
+function applyTurn(side, plan) {
+  const me = side, foe = side === "B" ? "W" : "B";
+  const s0 = plan.skill;
+  // 0) 汇总本回合要落的子：常规落子 + 技能隐含落子（双落/献祭的额外子、连弩三子），去重
+  const stoneSet = [];
+  const pushStone = rc => {
+    if (!rc) return;
+    if (!stoneSet.some(([a, b]) => a === rc[0] && b === rc[1])) stoneSet.push([rc[0], rc[1]]);
+  };
+  (plan.stones || []).forEach(pushStone);
+  if (s0) {
+    if (s0.name === "双落") pushStone(s0.picks[0]);
+    if (s0.name === "献祭") pushStone(s0.picks[1]);
+    if (s0.name === "连弩") s0.picks.forEach(pushStone);
+  }
+  // 1) 落子
+  stoneSet.forEach(([r, c]) => {
+    if (board[r][c] !== null) return;
+    placeStone(me, r, c);
+    log(`<span class="${me === "B" ? "b" : "w"}">${sideName(me)}</span> 落 ${LETTERS[c]}${N - r}`);
+  });
+  // 2) 技能
+  const s = plan.skill;
+  if (s) {
+    const sp = SKILLS[s.name];
+    cd[me][s.name] = sp.cd;
+    // 护盾拦截（永久护盾也算）：指定到带护盾的子时技能落空，但仍进 CD
+    const guarded = (s.name === "夺石" || s.name === "冰封" || s.name === "铁索" ||
+                     s.name === "夺魂" || s.name === "天雷") &&
+                    s.picks[0] && shielded(s.picks[0][0], s.picks[0][1]);
+    const guarded2 = (s.name === "换位" || s.name === "壁垒") &&
+                     s.picks[s.name === "换位" ? 1 : 0] &&
+                     shielded(s.picks[s.name === "换位" ? 1 : 0][0], s.picks[s.name === "换位" ? 1 : 0][1]);
+    // 兜底：护盾/壁垒只能加在己方棋子上
+    const wrongOwn = (s.name === "护盾" || s.name === "壁垒") &&
+                     s.picks[0] && board[s.picks[0][0]][s.picks[0][1]] !== me;
+    if (guarded || guarded2 || wrongOwn) {
+      log(`<span class="fk">　✦ ${sideName(me)}【${s.name}】被护盾挡下，技能落空</span>`);
+    } else if (s.name === "夺石") {
+      const [r, c] = s.picks[0];
+      clearCell(r, c); removeStone(foe, r, c);
+      log(`<span class="fk">　✦ ${sideName(me)}【夺石】移除 ${LETTERS[c]}${N - r}</span>`);
+    } else if (s.name === "换位") {
+      const [r1, c1] = s.picks[0], [r2, c2] = s.picks[1];
+      removeStone(me, r1, c1); removeStone(foe, r2, c2);
+      clearCell(r1, c1); clearCell(r2, c2);
+      placeStone(foe, r1, c1); placeStone(me, r2, c2);
+      log(`<span class="fk">　✦ ${sideName(me)}【换位】${LETTERS[c1]}${N - r1} ⇄ ${LETTERS[c2]}${N - r2}</span>`);
+    } else if (s.name === "挪移") {
+      const [r1, c1] = s.picks[0], [r2, c2] = s.picks[1];
+      removeStone(me, r1, c1); clearCell(r1, c1);
+      placeStone(me, r2, c2);
+      log(`<span class="fk">　✦ ${sideName(me)}【挪移】${LETTERS[c1]}${N - r1} → ${LETTERS[c2]}${N - r2}</span>`);
+    } else if (s.name === "克隆") {
+      const [r1, c1] = s.picks[0], [r2, c2] = s.picks[1];
+      placeStone(me, r2, c2);
+      log(`<span class="fk">　✦ ${sideName(me)}【克隆】在 ${LETTERS[c1]}${N - r1} 旁边复制出 ${LETTERS[c2]}${N - r2}</span>`);
+    } else if (s.name === "冰封") {
+      const [r, c] = s.picks[0];
+      const targets = lineRun(foe, r, c, 3);
+      targets.forEach(([rr, cc]) => frozen[key(rr, cc)] = 2);
+      log(`<span class="fk">　✦ ${sideName(me)}【冰封】冻住 ${targets.length} 子（2 回合）</span>`);
+    } else if (s.name === "铁索") {
+      const [r, c] = s.picks[0];
+      const targets = neigh4(r, c).filter(([rr, cc]) => board[rr][cc] === foe && !shielded(rr, cc));
+      frozen[key(r, c)] = 2;
+      targets.forEach(([rr, cc]) => frozen[key(rr, cc)] = 2);
+      log(`<span class="fk">　✦ ${sideName(me)}【铁索】锁住 ${targets.length + 1} 子（2 回合）</span>`);
+    } else if (s.name === "夺魂") {
+      const [r, c] = s.picks[0];
+      const targets = neigh4(r, c).filter(([rr, cc]) => board[rr][cc] === foe && !shielded(rr, cc));
+      clearCell(r, c); removeStone(foe, r, c);
+      targets.forEach(([rr, cc]) => frozen[key(rr, cc)] = 2);
+      log(`<span class="fk">　✦ ${sideName(me)}【夺魂】夺 ${LETTERS[c]}${N - r}，并冻住周围 ${targets.length} 子</span>`);
+    } else if (s.name === "护盾") {
+      const [r, c] = s.picks[0]; shields[key(r, c)] = -1;   // -1 = 整局永久
+      log(`<span class="fk">　✦ ${sideName(me)}【护盾】${LETTERS[c]}${N - r} 获得整局永久保护</span>`);
+    } else if (s.name === "封锁") {
+      const [r, c] = s.picks[0]; bans[key(r, c)] = { side: foe, turns: 1 };
+      log(`<span class="fk">　✦ ${sideName(me)}【封锁】${LETTERS[c]}${N - r}</span>`);
+    } else if (s.name === "十字封印") {
+      const [r, c] = s.picks[0];
+      crossCells9(r, c).forEach(([rr, cc]) => bans[key(rr, cc)] = { side: foe, turns: 2 });
+      log(`<span class="fk">　✦ ${sideName(me)}【十字封印】以 ${LETTERS[c]}${N - r} 为中心 9 格，2 回合</span>`);
+    } else if (s.name === "壁垒") {
+      const [r, c] = s.picks[0];
+      neigh8(r, c).forEach(([rr, cc]) => bans[key(rr, cc)] = { side: foe, turns: 2 });
+      log(`<span class="fk">　✦ ${sideName(me)}【壁垒】以 ${LETTERS[c]}${N - r} 为中心围出禁地，2 回合</span>`);
+    } else if (s.name === "天雷") {
+      const [r, c] = s.picks[0];
+      const victims = thunderVictims(r, c, foe);
+      victims.forEach(([rr, cc]) => { clearCell(rr, cc); removeStone(foe, rr, cc); });
+      log(`<span class="fk">　✦ ${sideName(me)}【天雷】劈掉成串敌子 ${victims.length} 枚</span>`);
+    } else if (s.name === "回溯") {
+      let cnt2 = 0;
+      for (let i = stones[foe].length - 1; i >= 0 && cnt2 < 2; i--) {
+        const [r, c] = stones[foe][i];
+        if (board[r][c] === foe) {
+          clearCell(r, c); stones[foe].splice(i, 1); cnt2++;
+          log(`<span class="fk">　✦ ${sideName(me)}【回溯】撤销对方 ${LETTERS[c]}${N - r}</span>`);
+        }
+      }
+      if (!cnt2) log(`<span class="fk">　✦ ${sideName(me)}【回溯】落空（对方无子可撤）</span>`);
+    } else if (s.name === "净化") {
+      let n1 = 0, n2 = 0;
+      for (const k in frozen) {
+        const [r, c] = k.split(",").map(Number);
+        if (board[r][c] === me) { delete frozen[k]; n1++; }
+      }
+      for (const k in bans) { if (bans[k].side === me) { delete bans[k]; n2++; } }
+      log(`<span class="fk">　✦ ${sideName(me)}【净化】解除 ${n1} 处冰冻、${n2} 格封锁</span>`);
+    } else if (s.name === "蓄力") {
+      SKILL_NAMES.forEach(k => { if (cd[me][k] > 0) cd[me][k] = Math.max(0, cd[me][k] - 2); });
+      log(`<span class="fk">　✦ ${sideName(me)}【蓄力】全部技能 CD −2（照常落子）</span>`);
+    } else if (s.name === "墓碑") {
+      tombstones[me] = (plan.stones && plan.stones.length) ? plan.stones.slice() : [];
+      log(`<span class="fk">　✦ ${sideName(me)}【墓碑】已埋下，下回合周围将生出一子</span>`);
+    } else if (s.name === "献祭") {
+      const [r, c] = s.picks[0];
+      clearCell(r, c); removeStone(me, r, c);
+      log(`<span class="fk">　✦ ${sideName(me)}【献祭】舍去 ${LETTERS[c]}${N - r}，本回合多落一子</span>`);
+    } else if (s.name === "反制") {
+      const [r, c] = s.picks[0];
+      clearCell(r, c); removeStone(foe, r, c);
+      log(`<span class="fk">　✦ ${sideName(me)}【反制】夺 ${LETTERS[c]}${N - r}</span>`);
+    } else if (s.name === "连弩" || s.name === "双落") {
+      log(`<span class="fk">　✦ ${sideName(me)}【${s.name}】本回合多子齐下</span>`);
+    }
+  }
+  // 3) 胜负
+  let win = null;
+  const checkList = stoneSet.concat(
+    s && s.name === "挪移" ? [s.picks[1]] : [],
+    s && s.name === "克隆" ? [s.picks[1]] : [],
+    s && s.name === "换位" ? [s.picks[1]] : []);
+  for (const rc of checkList) {
+    const line = fiveAt(rc[0], rc[1], me);
+    if (line) { win = line; break; }
+  }
+  // 4) 回合末：该方计时器与 CD
+  tickSide(me);
+  if (win) { winLine = win; winner = me; over = true; return { win: true }; }
+  // 5) 墓碑：换手后由对方开局前结算（在 startTurn 里处理）
+  turn = foe;
+  startTurn();
+  draw(); updateUI();
+  return { win: false };
+}
+
+/* 墓碑结算：轮到某方时，若其埋了墓碑，则在上次落子周围随机空点生一子 */
+function startTurn() {
+  const side = turn;
+  const seeds = tombstones[side];
+  if (seeds && seeds.length) {
+    const spots = [];
+    seeds.forEach(([r, c]) => neigh8(r, c).forEach(([rr, cc]) => {
+      if (canPlay(side, rr, cc)) spots.push([rr, cc]);
+    }));
+    if (spots.length) {
+      const [r, c] = spots[Math.floor(Math.random() * spots.length)];
+      placeStone(side, r, c);
+      log(`<span class="fk">　✦ ${sideName(side)}【墓碑】在 ${LETTERS[c]}${N - r} 生出一子</span>`);
+    }
+  }
+  tombstones[side] = null;
+}
+
+/* 与 (r,c) 同一直线上相邻的同色子（含自身），最多 maxN 枚 */
+function lineRun(side, r, c, maxN) {
+  const out = [[r, c]];
+  for (const [dr, dc] of DIRS) {
+    for (const sgn of [1, -1]) {
+      let i = 1;
+      while (out.length < maxN) {
+        const rr = r + dr * i * sgn, cc = c + dc * i * sgn;
+        if (!inB(rr, cc) || board[rr][cc] !== side || shielded(rr, cc)) break;
+        out.push([rr, cc]); i++;
+      }
+    }
+  }
+  return out.slice(0, maxN);
+}
+function inB(r, c) { return r >= 0 && r < N && c >= 0 && c < N; }
+function neigh4(r, c) {
+  return [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].filter(([a, b]) => inB(a, b));
+}
+function neigh8(r, c) {
+  const o = [];
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+    if (!a && !b) continue;
+    if (inB(r + a, c + b)) o.push([r + a, c + b]);
+  }
+  return o;
+}
+function crossCells9(r, c) {
+  const o = [[r, c]];
+  for (let i = 1; i <= 2; i++) {
+    [[r - i, c], [r + i, c], [r, c - i], [r, c + i]].forEach(([a, b]) => { if (inB(a, b)) o.push([a, b]); });
+  }
+  return o;
+}
+/* 天雷：5×5 范围内，成串（4 邻接连通块 ≥2 子）的对方棋子全部劈掉，孤立子幸免 */
+function thunderVictims(r0, c0, foe) {
+  const area = new Set(), seen = new Set(), out = [];
+  for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) {
+    if (inB(r0 + a, c0 + b)) area.add(key(r0 + a, c0 + b));
+  }
+  for (const k of area) {
+    if (seen.has(k)) continue;
+    const [r, c] = k.split(",").map(Number);
+    if (board[r][c] !== foe) { seen.add(k); continue; }
+    // 4 邻接洪水填充（限制在 5×5 区域内）
+    const comp = [], stack = [[r, c]];
+    seen.add(k);
+    while (stack.length) {
+      const [rr, cc] = stack.pop();
+      comp.push([rr, cc]);
+      neigh4(rr, cc).forEach(([a, b]) => {
+        const kk = key(a, b);
+        if (!seen.has(kk) && area.has(kk) && board[a][b] === foe) { seen.add(kk); stack.push([a, b]); }
+      });
+    }
+    if (comp.length >= 2) comp.forEach(x => { if (!shielded(x[0], x[1])) out.push(x); });
+  }
+  return out;
+}
+
+function removeStone(side, r, c) {
+  const i = stones[side].findIndex(([a, b]) => a === r && b === c);
+  if (i >= 0) stones[side].splice(i, 1);
+}
+function tickSide(side) {
+  SKILL_NAMES.forEach(k => { if (cd[side][k] > 0) cd[side][k]--; });
+  [frozen, shields].forEach(m => {
+    for (const k in m) {
+      const [r, c] = k.split(",").map(Number);
+      if (board[r][c] !== side) continue;   // 棋子已不在，交给 clearCell 清理
+      if (m[k] > 0) m[k]--;                 // 有限回合数递减（-1 = 永久护盾，不递减也不删除）
+      if (m[k] === 0) delete m[k];
+    }
+  });
+  for (const k in bans) {
+    if (bans[k].side === side) { bans[k].turns--; if (bans[k].turns <= 0) delete bans[k]; }
+  }
+}
+function crossCells(r, c) {
+  return [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]
+    .filter(([a, b]) => a >= 0 && a < N && b >= 0 && b < N);
+}
+function boxCells(r, c) {
+  const o = [];
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+    const rr = r + a, cc = c + b;
+    if (rr >= 0 && rr < N && cc >= 0 && cc < N) o.push([rr, cc]);
+  }
+  return o;
+}
+
+function finish(side, resign) {
+  over = true; winner = side; turn = side;
+  draw(); updateUI();
+  let title, sub;
+  if (mode === "pvp") {
+    title = (side === "B" ? "⚫ 黑方" : "⚪ 白方") + "获胜";
+    sub = resign ? "对方认输。" : "五连达成。再来一局？";
+  } else {
+    title = side === "B" ? "🎉 你赢了！" : (resign ? "你认输了" : "我赢了");
+    sub = side === "B" ? "五连达成。要换技能再来一局吗？" : "再来一局？换套技能试试。";
+  }
+  document.getElementById("overTitle").textContent = title;
+  document.getElementById("overSub").textContent = sub;
+  document.getElementById("over").classList.add("show");
+  log(`<b>★ ${side === "B" ? "黑方" : "白方"}获胜</b>`);
+}
+
+function fiveAt(r, c, color) {
+  if (eff(r, c) !== color) return null;
+  for (const [dr, dc] of DIRS) {
+    const line = [[r, c]];
+    for (const sgn of [1, -1]) {
+      let i = 1;
+      while (true) {
+        const rr = r + dr * i * sgn, cc = c + dc * i * sgn;
+        if (rr < 0 || rr >= N || cc < 0 || cc >= N || eff(rr, cc) !== color) break;
+        if (sgn === 1) line.push([rr, cc]); else line.unshift([rr, cc]);
+        i++;
+      }
+    }
+    if (line.length >= 5) return line.slice(0, 5);
+  }
+  return null;
+}
+
+/* ==================== 棋型评估 ==================== */
+const PAT = [
+  ["11111", 5000000], ["011110", 400000],
+  ["011112", 50000], ["211110", 50000], ["11011", 50000], ["10111", 50000], ["11101", 50000],
+  ["01110", 15000], ["010110", 13000], ["011010", 13000],
+  ["001112", 1400], ["211100", 1400], ["011012", 1400], ["210110", 1400],
+  ["01100", 700], ["00110", 700], ["001100", 500], ["01010", 200], ["00100", 30],
+];
+
+function lineStrings() {
+  const out = [];
+  for (let r = 0; r < N; r++) { let s = ""; for (let c = 0; c < N; c++) s += (eff(r, c) || "."); out.push(s); }
+  for (let c = 0; c < N; c++) { let s = ""; for (let r = 0; r < N; r++) s += (eff(r, c) || "."); out.push(s); }
+  for (let k = -(N - 5); k <= N - 5; k++) {
+    let s = "";
+    for (let r = 0; r < N; r++) { const c = r - k; if (c >= 0 && c < N) s += (eff(r, c) || "."); }
+    if (s.length >= 5) out.push(s);
+  }
+  for (let k = 4; k <= 2 * (N - 1) - 4; k++) {
+    let s = "";
+    for (let r = 0; r < N; r++) { const c = k - r; if (c >= 0 && c < N) s += (eff(r, c) || "."); }
+    if (s.length >= 5) out.push(s);
+  }
+  return out;
+}
+
+function evalLines(lines, side) {
+  let total = 0;
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    let s = "2";
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      s += ch === side ? "1" : (ch === "." ? "0" : "2");
+    }
+    s += "2";
+    for (let pi = 0; pi < PAT.length; pi++) {
+      const p = PAT[pi][0];
+      let idx = s.indexOf(p);
+      while (idx !== -1) { total += PAT[pi][1]; idx = s.indexOf(p, idx + 1); }
+    }
+  }
+  return total;
+}
+function evaluate() {
+  const lines = lineStrings();
+  return evalLines(lines, "W") - 1.12 * evalLines(lines, "B");
+}
+function evalSide(side) { return evalLines(lineStrings(), side); }
+
+/* 局部棋型分（用于着法排序，比全盘评估快一个量级） */
+function lineScore(r, c, color) {
+  let tot = 0;
+  for (const [dr, dc] of DIRS) {
+    let cnt = 1, opens = 0, gap = 0;
+    for (const sgn of [1, -1]) {
+      let i = 1;
+      while (true) {
+        const rr = r + dr * i * sgn, cc = c + dc * i * sgn;
+        if (rr < 0 || rr >= N || cc < 0 || cc >= N) break;
+        const e = board[rr][cc];
+        if (e === color && !(frozen[key(rr, cc)] > 0)) { cnt++; i++; continue; }
+        if (e === null && gap === 0 && i === 1) { gap = 1; i++; continue; }
+        if (e === null) opens++;
+        break;
+      }
+    }
+    if (cnt >= 5) tot += 1000000;
+    else if (cnt === 4 && opens === 2) tot += 50000;
+    else if (cnt === 4 && opens === 1) tot += 6000;
+    else if (cnt === 3 && opens === 2) tot += 5000;
+    else if (cnt === 3 && opens === 1) tot += 500;
+    else if (cnt === 2 && opens === 2) tot += 400;
+    else if (cnt === 2 && opens === 1) tot += 40;
+    else if (cnt === 1 && opens === 2) tot += 4;
+  }
+  return tot;
+}
+
+function cands(side) {
+  const out = [];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    if (!canPlay(side, r, c)) continue;
+    let near = false;
+    for (let dr = -2; dr <= 2 && !near; dr++) for (let dc = -2; dc <= 2; dc++) {
+      const rr = r + dr, cc = c + dc;
+      if (rr >= 0 && rr < N && cc >= 0 && cc < N && board[rr][cc]) { near = true; break; }
+    }
+    if (near) out.push([r, c]);
+  }
+  return out.length ? out : (canPlay(side, 7, 7) ? [[7, 7]] : []);
+}
+
+function winningPoints(side, pool) {
+  const out = [];
+  for (const [r, c] of (pool || cands(side))) {
+    if (!canPlay(side, r, c)) continue;
+    board[r][c] = side;
+    if (fiveAt(r, c, side)) out.push([r, c]);
+    board[r][c] = null;
+  }
+  return out;
+}
+
+/* ============ VCF：连续冲四算杀 ============
+   我方每一手都做成"四"，对手若不堵就下一手成五，因此对手每步都必须堵；
+   于是可以顺着"我方冲四 → 对手唯一堵点"的链条一路算下去，
+   直到出现双四（对手堵不完）或直接成五。 */
+let vcfBudget = 0;
+const otherSide = s => (s === "B" ? "W" : "B");
+
+function fourMoves(side, limit) {
+  const out = [], pool = cands(side);
+  for (const [r, c] of pool) {
+    if (!canPlay(side, r, c)) continue;
+    board[r][c] = side;
+    const w = fiveAt(r, c, side) ? [[r, c]] : winningPoints(side, pool);
+    board[r][c] = null;
+    if (w.length) out.push({ mv: [r, c], n: w.length });
+  }
+  out.sort((a, b) => b.n - a.n);
+  return limit ? out.slice(0, limit) : out;
+}
+
+function vcf(side, depth) {
+  if (--vcfBudget <= 0) return null;
+  const wp = winningPoints(side, cands(side));
+  if (wp.length) return [];                 // 已经能直接成五
+  if (depth <= 0) return null;
+  const opp = otherSide(side);
+  for (const { mv } of fourMoves(side, 5)) {
+    board[mv[0]][mv[1]] = side;
+    let seq = null;
+    if (fiveAt(mv[0], mv[1], side)) seq = [mv];
+    else {
+      const w2 = winningPoints(side, cands(side));
+      if (w2.length >= 2) seq = [mv];                        // 双四：对手堵不完
+      else if (w2.length === 1 && winningPoints(opp, cands(opp)).length === 0) {
+        const blk = w2[0];                                   // 对手唯一堵点
+        if (canPlay(opp, blk[0], blk[1])) {
+          board[blk[0]][blk[1]] = opp;
+          const sub = vcf(side, depth - 1);
+          board[blk[0]][blk[1]] = null;
+          if (sub) seq = [mv].concat(sub);
+        }
+      }
+    }
+    board[mv[0]][mv[1]] = null;
+    if (seq) return seq;
+  }
+  return null;
+}
+
+function vcfFind(side, depth, budget) {
+  vcfBudget = budget || 4000;
+  const t0 = Date.now();
+  const r = vcf(side, depth || 4);
+  if (Date.now() - t0 > 700) return null;     // 时间保护
+  return r;
+}
+
+/* ============ 棋型扫描：找出"必须应"的威胁点 ============
+   这是以前最致命的漏洞：只会堵"已经成四"的点，
+   对方先做活三、再做活四就直接被秒。这里按棋型扫描出真正的威胁点。 */
+function allLines() {
+  const out = [];
+  for (let r = 0; r < N; r++) { const cs = []; for (let c = 0; c < N; c++) cs.push([r, c]); out.push(cs); }
+  for (let c = 0; c < N; c++) { const cs = []; for (let r = 0; r < N; r++) cs.push([r, c]); out.push(cs); }
+  for (let k = -(N - 5); k <= N - 5; k++) {
+    const cs = [];
+    for (let r = 0; r < N; r++) { const c = r - k; if (c >= 0 && c < N) cs.push([r, c]); }
+    if (cs.length >= 5) out.push(cs);
+  }
+  for (let k = 4; k <= 2 * (N - 1) - 4; k++) {
+    const cs = [];
+    for (let r = 0; r < N; r++) { const c = k - r; if (c >= 0 && c < N) cs.push([r, c]); }
+    if (cs.length >= 5) out.push(cs);
+  }
+  return out;
+}
+function lineStr(cells, side) {
+  let s = "2";
+  for (let i = 0; i < cells.length; i++) {
+    const e = eff(cells[i][0], cells[i][1]);
+    s += e === side ? "1" : (e === null ? "0" : "2");
+  }
+  return s + "2";
+}
+/* 返回匹配棋型里所有 '0' 格的坐标（即需要占住或堵住的点） */
+function patternPoints(side, pats, lines) {
+  const out = [], seen = new Set();
+  for (const cells of (lines || allLines())) {
+    const s = lineStr(cells, side);
+    for (let pi = 0; pi < pats.length; pi++) {
+      const p = pats[pi];
+      let i = s.indexOf(p);
+      while (i !== -1) {
+        for (let k = 0; k < p.length; k++) {
+          if (p[k] !== "0") continue;
+          const idx = i + k - 1;
+          if (idx < 0 || idx >= cells.length) continue;
+          const r = cells[idx][0], c = cells[idx][1], kk = key(r, c);
+          if (!seen.has(kk) && eff(r, c) === null) { seen.add(kk); out.push([r, c]); }
+        }
+        i = s.indexOf(p, i + 1);
+      }
+    }
+  }
+  return out;
+}
+const P_FOUR = ["11110", "01111", "11011", "10111", "11101"];
+const P_THREE = ["01110", "010110", "011010"];
+const P_TWO = ["01100", "00110", "01010", "0110"];
+const fourPoints = (side, lines) => patternPoints(side, P_FOUR, lines);
+const threePoints = (side, lines) => patternPoints(side, P_THREE, lines);
+const twoPoints = (side, lines) => patternPoints(side, P_TWO, lines);
+function hasOpenFour(side, lines) {
+  for (const cells of (lines || allLines())) {
+    if (lineStr(cells, side).indexOf("011110") !== -1) return true;
+  }
+  return false;
+}
+/* 在候选点里挑一个"既堵对方、又利于自己"的点 */
+function pickBestOf(pts, side) {
+  const opp = otherSide(side);
+  let best = null, bv = -1e18;
+  for (const [r, c] of pts) {
+    if (!canPlay(side, r, c)) continue;
+    const v = lineScore(r, c, side) + 0.9 * lineScore(r, c, opp);
+    if (v > bv) { bv = v; best = [r, c]; }
+  }
+  return best;
+}
+
+/* 威胁：对方是否已形成 size 以上的连线威胁（活三以上） */
+function hasThreat(side, size) {
+  const opp = side === "B" ? "W" : "B";
+  for (const line of lineStrings()) {
+    let s = "2";
+    for (const ch of line) s += ch === side ? "1" : (ch === "." ? "0" : "2");
+    s += "2";
+    if (size <= 3 && (s.includes("01110") || s.includes("010110") || s.includes("011010"))) return true;
+    if (size <= 4 && (s.includes("011110") || s.includes("11110") || s.includes("01111"))) return true;
+  }
+  return false;
+}
+
+function greedy(side, pool) {
+  const opp = side === "B" ? "W" : "B";
+  let best = null, bv = -1e18;
+  for (const [r, c] of (pool || cands(side))) {
+    if (!canPlay(side, r, c)) continue;
+    board[r][c] = side;
+    const v = evalSide(side) - 1.05 * evalSide(opp);
+    board[r][c] = null;
+    if (v > bv) { bv = v; best = [r, c]; }
+  }
+  return best;
+}
+
+/* 极小极大 + α-β（着法排序用局部棋型分，叶节点才算全盘） */
+function topMoves(side, limit) {
+  const opp = side === "B" ? "W" : "B";
+  const arr = [];
+  for (const [r, c] of cands(side)) {
+    if (!canPlay(side, r, c)) continue;
+    board[r][c] = side;
+    const mine = fiveAt(r, c, side) ? 1e9 : lineScore(r, c, side);
+    board[r][c] = null;
+    board[r][c] = opp;
+    const fo = fiveAt(r, c, opp) ? 1e9 : lineScore(r, c, opp);
+    board[r][c] = null;
+    arr.push([[r, c], mine + 1.05 * fo]);
+  }
+  arr.sort((a, b) => b[1] - a[1]);
+  return arr.slice(0, limit).map(x => x[0]);
+}
+
+function search(depth, alpha, beta, side) {
+  const opp = side === "B" ? "W" : "B";
+  const moves = topMoves(side, 6);
+  if (!moves.length) return evaluate();
+  if (side === "W") {
+    let best = -1e18;
+    for (const [r, c] of moves) {
+      board[r][c] = side;
+      let v;
+      if (fiveAt(r, c, side)) v = 1e8 + depth * 1000;
+      else v = depth <= 1 ? evaluate() : search(depth - 1, alpha, beta, opp);
+      board[r][c] = null;
+      if (v > best) best = v;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break;
+    }
+    return best;
+  } else {
+    let best = 1e18;
+    for (const [r, c] of moves) {
+      board[r][c] = side;
+      let v;
+      if (fiveAt(r, c, side)) v = -1e8 - depth * 1000;
+      else v = depth <= 1 ? evaluate() : search(depth - 1, alpha, beta, opp);
+      board[r][c] = null;
+      if (v < best) best = v;
+      if (best < beta) beta = best;
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+}
+
+function bestMove(depth) {
+  const t0 = Date.now();
+  const moves = topMoves("W", depth >= 2 ? 10 : 14);
+  let best = moves.length ? moves[0] : null, bv = -1e18;
+  for (const [r, c] of moves) {
+    board[r][c] = "W";
+    let v;
+    if (fiveAt(r, c, "W")) v = 1e9;
+    else v = depth <= 1 ? evaluate() : search(depth - 1, -1e18, 1e18, "B");
+    board[r][c] = null;
+    if (v > bv) { bv = v; best = [r, c]; }
+    if (Date.now() - t0 > 900) break;      // 时间保护：超时就用目前最优
+  }
+  return best;
+}
+
+/* ==================== AI 技能决策 ==================== */
+function aiSkillAvailable(name) { return loadout.W.indexOf(name) >= 0 && cd.W[name] <= 0; }
+/* 搜索深度：困难档 3 层（配合战术层与 VCF），有 900ms 时间保护 */
+function searchDepth() { return Math.min(3, Math.max(1, difficulty)); }
+
+function aiTurn() {
+  if (over) return;
+  const plan = decideAI();
+  const res = applyTurn("W", plan);
+  if (res.win) { finish("W"); return; }
+  draw(); updateUI();
+}
+
+function decideAI() {
+  const me = "W", opp = "B";
+  const pool = cands(me);
+  const none = { stones: [], skill: null };
+
+  // 1) 一手成五
+  let wp = winningPoints(me, pool);
+  if (wp.length) return { stones: [wp[0]], skill: null };
+
+  // 2) 双落成五
+  if (aiSkillAvailable("双落") && difficulty >= 2) {
+    for (const [r, c] of pool) {
+      board[r][c] = me;
+      const w2 = winningPoints(me, pool).filter(([a, b]) => !(a === r && b === c));
+      board[r][c] = null;
+      if (w2.length) return { stones: [[r, c], w2[0]], skill: { name: "双落", picks: [] } };
+    }
+  }
+
+  // 3) 双落造双杀（两个胜点）
+  if (aiSkillAvailable("双落") && difficulty >= 3) {
+    for (const [r, c] of pool) {
+      board[r][c] = me;
+      for (const [r2, c2] of topMoves(me, 8)) {
+        if (r2 === r && c2 === c) continue;
+        board[r2][c2] = me;
+        const w3 = winningPoints(me, pool);
+        board[r2][c2] = null;
+        if (w3.length >= 2) { board[r][c] = null; return { stones: [[r, c], [r2, c2]], skill: { name: "双落", picks: [] } }; }
+      }
+      board[r][c] = null;
+    }
+  }
+
+  // 3b) VCF 算杀：我方能否靠连续冲四（对手每步都必须堵）一路杀到底
+  if (difficulty >= 3) {
+    const seq = vcfFind(me, 5, 6000);
+    if (seq && seq.length) return { stones: [seq[0]], skill: null };
+    if (aiSkillAvailable("双落")) {
+      // 双落 + VCF：先用双落补一手，再看能不能算穿
+      for (const [r, c] of topMoves(me, 8)) {
+        board[r][c] = me;
+        const s2 = vcfFind(me, 4, 3000);
+        board[r][c] = null;
+        if (s2 && s2.length) {
+          const extra = s2[0];
+          if (extra[0] !== r || extra[1] !== c) {
+            return { stones: [[r, c], extra], skill: { name: "双落", picks: [] } };
+          }
+        }
+      }
+    }
+  }
+
+  // 3c) 反算对手杀棋：对方存在 VCF 路线时，先用技能掐断，再退而封其起点
+  if (difficulty >= 2) {
+    const oseq = vcfFind(opp, 4, 4000);
+    if (oseq && oseq.length) {
+      const start = oseq[0];
+      if (aiSkillAvailable("夺石")) {
+        const t = pickBreakStone([start]);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "夺石", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("冰封")) {
+        const t = pickBreakStone([start]);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "冰封", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("夺魂")) {
+        const t = pickBreakStone([start]);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "夺魂", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("铁索")) {
+        const t = pickBreakStone([start]);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "铁索", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("反制") && condOK("反制", "W")) {
+        const t = pickBreakStone([start]);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "反制", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("十字封印") && canPlay(me, start[0], start[1])) {
+        const nb = bestMove(searchDepth());
+        if (nb) return { stones: [nb], skill: { name: "十字封印", picks: [start] } };
+      }
+      if (aiSkillAvailable("天雷") && canPlay(me, start[0], start[1])) {
+        const nb = bestMove(searchDepth());
+        if (nb) return { stones: [nb], skill: { name: "天雷", picks: [start] } };
+      }
+      if (aiSkillAvailable("回溯")) return { stones: [], skill: { name: "回溯", picks: [] } };
+      if (canPlay(me, start[0], start[1])) return { stones: [start], skill: null };
+    }
+  }
+
+  // 3d) 大招优先：天雷清场 / 连弩造杀 / 克隆补杀
+  if (difficulty >= 2) {
+    if (aiSkillAvailable("天雷")) {
+      let bestT = null, bestN = 2;                    // 至少要劈掉 3 枚才值得放
+      for (const [r, c] of stones.B) {
+        if (board[r][c] !== "B") continue;
+        const v = thunderVictims(r, c, opp);
+        if (v.length > bestN) { bestN = v.length; bestT = [r, c]; }
+      }
+      if (bestT) {
+        const nb = bestMove(searchDepth());
+        if (nb) return { stones: [nb], skill: { name: "天雷", picks: [bestT] } };
+      }
+    }
+    if (aiSkillAvailable("连弩")) {
+      const trio = findCrossbow(me);
+      if (trio) return { stones: [], skill: { name: "连弩", picks: trio } };
+    }
+    if (aiSkillAvailable("克隆")) {
+      const cl = findClone(me);
+      if (cl) {
+        const nb = bestMove(searchDepth());
+        if (nb) return { stones: [nb], skill: { name: "克隆", picks: [[cl[0], cl[1]], [cl[2], cl[3]]] } };
+      }
+    }
+  }
+
+  // 4) 对方胜点
+  const owp = winningPoints(opp, cands(opp));
+  if (owp.length) {
+    if (owp.length >= 2) {
+      // 单堵无效：优先用技能拆
+      if (aiSkillAvailable("反制")) {
+        const t = pickBreakStone(owp);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "反制", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("夺石")) {
+        const t = pickBreakStone(owp);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "夺石", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("冰封")) {
+        const t = pickBreakStone(owp);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "冰封", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("夺魂")) {
+        const t = pickBreakStone(owp);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "夺魂", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("铁索")) {
+        const t = pickBreakStone(owp);
+        if (t) { const nb = bestMove(searchDepth()); if (nb) return { stones: [nb], skill: { name: "铁索", picks: [t] } }; }
+      }
+      if (aiSkillAvailable("回溯")) return { stones: [], skill: { name: "回溯", picks: [] } };
+      if (aiSkillAvailable("十字封印")) {
+        const [r, c] = owp[0];
+        const nb = bestMove(searchDepth());
+        if (nb) return { stones: [nb], skill: { name: "十字封印", picks: [[r, c]] } };
+      }
+      if (aiSkillAvailable("天雷")) {
+        const [r, c] = owp[0];
+        const nb = bestMove(searchDepth());
+        if (nb) return { stones: [nb], skill: { name: "天雷", picks: [[r, c]] } };
+      }
+    }
+    const blk = owp.find(([r, c]) => canPlay(me, r, c));
+    if (blk) return { stones: [blk], skill: null };
+  }
+
+  // 4c) 对方活三 / 冲四威胁：必须应（补上"不防活三、被活四秒杀"的漏洞）
+  if (difficulty >= 2) {
+    const lines = allLines();
+    const oFour = fourPoints(opp, lines);
+    if (oFour.length) {
+      const b = oFour.find(([r, c]) => canPlay(me, r, c));
+      if (b) return { stones: [b], skill: null };
+    }
+    const oThree = threePoints(opp, lines);
+    if (oThree.length) {
+      // 先看自己有没有更快的杀（连续冲四算杀），有就直接走杀
+      const mySeq = vcfFind(me, 4, 2500);
+      if (mySeq && mySeq.length) return { stones: [mySeq[0]], skill: null };
+      // 【反制】的触发条件正是"对方活三"：夺一子且照常落子
+      if (aiSkillAvailable("反制") && condOK("反制", "W")) {
+        const t = pickBreakStone(oThree);
+        const nb = bestMove(searchDepth());
+        if (t && nb) return { stones: [nb], skill: { name: "反制", picks: [t] } };
+      }
+      // 若对方是"双活三"级别的杀，考虑直接拆子
+      if (oThree.length >= 4 && aiSkillAvailable("夺石")) {
+        const t = pickBreakStone(oThree);
+        const nb = bestMove(searchDepth());
+        if (t && nb) return { stones: [nb], skill: { name: "夺石", picks: [t] } };
+      }
+      const b = pickBestOf(oThree, me);
+      if (b) return { stones: [b], skill: null };
+    }
+  }
+
+  // 5) 反制：对方有活三以上，且我用它顺手削弱
+  if (aiSkillAvailable("反制") && hasThreat(opp, 3) && difficulty >= 2) {
+    const t = pickBreakStone(null);
+    const nb = bestMove(searchDepth());
+    if (t && nb) return { stones: [nb], skill: { name: "反制", picks: [t] } };
+  }
+
+  // 6) 我方能否一手造活四（下回合必胜）
+  const four = findDoubleThreat(me);
+  if (four) return { stones: [four], skill: null };
+
+  // 7) 常规最佳着法
+  const mv = bestMove(searchDepth()) || pool[0];
+
+  // 7b) 挪移：把己方一子挪到要点，直接成五或造出双杀
+  if (aiSkillAvailable("挪移") && difficulty >= 2) {
+    for (const [r0, c0] of stones.W.slice(0, 12)) {
+      if (board[r0][c0] !== "W") continue;
+      board[r0][c0] = null;
+      let dest = null;
+      for (const [r2, c2] of topMoves(me, 6)) {
+        if (!canPlay(me, r2, c2) || (r2 === mv[0] && c2 === mv[1])) continue;
+        board[r2][c2] = me;
+        const good = fiveAt(r2, c2, me) || winningPoints(me, cands(me)).length >= 2;
+        board[r2][c2] = null;
+        if (good) { dest = [r2, c2]; break; }
+      }
+      board[r0][c0] = "W";
+      if (dest) return { stones: [mv], skill: { name: "挪移", picks: [[r0, c0], dest] } };
+    }
+  }
+
+  // 8) 闲时技能
+  if (difficulty >= 2) {
+    // 净化：自己被冻住/被封锁得难受时先解除
+    if (aiSkillAvailable("净化")) {
+      const fz = Object.keys(frozen).filter(k => {
+        const [r, c] = k.split(",").map(Number); return board[r][c] === me;
+      }).length;
+      const bn = Object.keys(bans).filter(k => bans[k].side === me).length;
+      if (fz >= 2 || bn >= 3) return { stones: [mv], skill: { name: "净化", picks: [] } };
+    }
+    // 护盾（整局永久）：对方带拆子类技能且在 CD 外时，保护我方关键子
+    if (aiSkillAvailable("护盾") && oppHasRemoval()) {
+      const crit = myCriticalStone();
+      if (crit) return { stones: [mv], skill: { name: "护盾", picks: [crit] } };
+    }
+    // 壁垒：护住关键子周围一圈，断对方要点
+    if (aiSkillAvailable("壁垒") && hasThreat(opp, 3)) {
+      const crit = myCriticalStone();
+      if (crit) return { stones: [mv], skill: { name: "壁垒", picks: [crit] } };
+    }
+    // 十字封印 / 封锁：压制对方最好的攻击点
+    if (aiSkillAvailable("十字封印") && hasThreat(opp, 2)) {
+      const ob = oppBestPoint();
+      if (ob && !(ob[0] === mv[0] && ob[1] === mv[1]))
+        return { stones: [mv], skill: { name: "十字封印", picks: [ob] } };
+    }
+    if (aiSkillAvailable("封锁")) {
+      const ob = oppBestPoint();
+      if (ob && !(ob[0] === mv[0] && ob[1] === mv[1])) return { stones: [mv], skill: { name: "封锁", picks: [ob] } };
+    }
+    // 墓碑：局面平稳时白赚一子
+    if (aiSkillAvailable("墓碑") && !hasThreat(opp, 3)) return { stones: [mv], skill: { name: "墓碑", picks: [] } };
+    // 蓄力：CD 都还长时加速转冷却（照常落子）
+    if (aiSkillAvailable("蓄力") && allCdLong()) return { stones: [mv], skill: { name: "蓄力", picks: [] } };
+  }
+  return { stones: [mv], skill: null };
+}
+
+function pickBreakStone(wp) {
+  // 拆活四：找对方活四线中间的一枚子
+  if (wp && wp.length >= 2) {
+    const [r0, c0] = wp[0], [r1, c1] = wp[1];
+    if (r0 === r1 || c0 === c1 || Math.abs(r0 - r1) === Math.abs(c0 - c1)) {
+      const dr = Math.sign(r1 - r0), dc = Math.sign(c1 - c0);
+      const steps = Math.max(Math.abs(r1 - r0), Math.abs(c1 - c0));
+      for (let i = 1; i < steps; i++) {
+        const rr = r0 + dr * i, cc = c0 + dc * i;
+        if (board[rr] && board[rr][cc] === "B" && !shielded(rr, cc)) return [rr, cc];
+      }
+    }
+  }
+  // 退化：离威胁最近的对方子
+  const anchor = wp ? wp[0] : bestBlockAnchor();
+  if (!anchor) return null;
+  let best = null, bd = 99;
+  for (const [r, c] of stones.B) {
+    if (board[r][c] !== "B" || shielded(r, c)) continue;
+    const d = Math.max(Math.abs(r - anchor[0]), Math.abs(c - anchor[1]));
+    if (d < bd) { bd = d; best = [r, c]; }
+  }
+  return bd <= 4 ? best : null;
+}
+function bestBlockAnchor() {
+  const owp = winningPoints("B", cands("B"));
+  if (owp.length) return owp[0];
+  for (const line of lineStrings()) {
+    let s = "2"; for (const ch of line) s += ch === "B" ? "1" : (ch === "." ? "0" : "2"); s += "2";
+    const i = s.indexOf("01110");
+    if (i !== -1) {
+      // 粗略定位：不精确，仅用于锚点
+      return null;
+    }
+  }
+  return null;
+}
+function findDoubleThreat(side) {
+  for (const [r, c] of topMoves(side, 12)) {
+    board[r][c] = side;
+    const w = winningPoints(side);
+    board[r][c] = null;
+    if (w.length >= 2) return [r, c];
+  }
+  return null;
+}
+function oppHasRemoval() {
+  return ["夺石", "换位", "冰封", "反制", "夺魂", "天雷"].some(n => loadout.B.indexOf(n) >= 0 && cd.B[n] <= 0);
+}
+/* 连弩：找一条共线相邻三格，落下后直接成五或造出双杀 */
+function findCrossbow(side) {
+  const pool = cands(side);
+  for (const [r, c] of pool) {
+    for (const [dr, dc] of DIRS) {
+      const cells = [[r, c], [r + dr, c + dc], [r + dr * 2, c + dc * 2]];
+      if (!cells.every(([a, b]) => canPlay(side, a, b))) continue;
+      cells.forEach(([a, b]) => { board[a][b] = side; });
+      const isWin = cells.some(([a, b]) => fiveAt(a, b, side));
+      const w = isWin ? 9 : winningPoints(side, pool).length;
+      cells.forEach(([a, b]) => { board[a][b] = null; });
+      if (w >= 2) return cells;
+    }
+  }
+  return null;
+}
+/* 克隆：把一子复制到相邻空点，能否直接成五或造出双杀 */
+function findClone(side) {
+  for (const [r0, c0] of stones[side]) {
+    if (board[r0][c0] !== side) continue;
+    for (const [r2, c2] of neigh8(r0, c0)) {
+      if (!canPlay(side, r2, c2)) continue;
+      board[r2][c2] = side;
+      const isWin = fiveAt(r2, c2, side);
+      const w = isWin ? 9 : winningPoints(side, cands(side)).length;
+      board[r2][c2] = null;
+      if (w >= 2) return [r0, c0, r2, c2];
+    }
+  }
+  return null;
+}
+function myCriticalStone() {
+  let best = null, bv = -1;
+  for (const [r, c] of stones.W) {
+    if (board[r][c] !== "W" || shielded(r, c)) continue;
+    let v = 0;
+    for (const [dr, dc] of DIRS) {
+      let n = 1;
+      for (const sgn of [1, -1]) {
+        let i = 1;
+        while (true) {
+          const rr = r + dr * i * sgn, cc = c + dc * i * sgn;
+          if (rr < 0 || rr >= N || cc < 0 || cc >= N || eff(rr, cc) !== "W") break;
+          n++; i++;
+        }
+      }
+      v = Math.max(v, n);
+    }
+    if (v > bv) { bv = v; best = [r, c]; }
+  }
+  return bv >= 3 ? best : null;
+}
+function oppBestPoint() {
+  let best = null, bv = -1;
+  for (const [r, c] of cands("B")) {
+    board[r][c] = "B";
+    const v = evalSide("B");
+    board[r][c] = null;
+    if (v > bv) { bv = v; best = [r, c]; }
+  }
+  return best;
+}
+function allCdLong() {
+  const vals = loadout.W.map(n => cd.W[n]).filter(v => v > 0);
+  return vals.length >= 2 && vals.every(v => v >= 3);
+}
+
+/* ==================== 选技能（人机 / 本地双人） ==================== */
+let picks = [], aiPickCache = null, pickSide = "B", pvpLoadouts = { B: null, W: null };
+
+function showPick() {
+  picks = []; pickSide = "B"; pvpLoadouts = { B: null, W: null };
+  const title = document.getElementById("pickTitle");
+  const desc = document.getElementById("pickDesc");
+  const aiTxt = document.getElementById("aiPickTxt");
+  if (mode === "ai") {
+    aiPickCache = aiLoadout(aiSkillCount(difficulty));
+    title.textContent = "选择你的 3 个技能";
+    desc.innerHTML = "技能按 <b>冷却回合（CD）</b> 循环使用：用完进入 CD，每过自己一个回合减 1。AI 按难度带 3/5/6 个技能。";
+    aiTxt.innerHTML = `${aiPickCache.join("、")} <b style="color:#7d5ba6">（${aiPickCache.length} 个）</b>`;
+  } else {
+    title.textContent = "⚫ 黑方先选 3 个技能";
+    desc.innerHTML = "本地双人：两位玩家在同一台电脑上轮流操作，<b>各自选 3 个技能</b>，双方技能与 CD 都可见。";
+    aiTxt.innerHTML = "白方稍后选择";
+  }
+  renderPickGrid();
+  document.getElementById("modal").classList.add("show");
+}
+
+function renderPickGrid() {
+  const g = document.getElementById("pickGrid");
+  g.innerHTML = "";
+  SKILL_NAMES.forEach(name => {
+    const sp = SKILLS[name];
+    const d = document.createElement("div");
+    d.className = "card"; d.dataset.n = name;
+    d.innerHTML = `<div class="nm"><span>${name}</span><span class="cd">CD ${sp.cd}</span></div>
+      <div class="ds">${sp.ds}</div>`;
+    d.onclick = () => {
+      if (d.classList.contains("on")) { d.classList.remove("on"); picks = picks.filter(x => x !== name); }
+      else { if (picks.length >= 3) { say("每人最多选 3 个", true); return; } d.classList.add("on"); picks.push(name); }
+      document.getElementById("pickCount").textContent = picks.length;
+      syncStartBtn();
+    };
+    g.appendChild(d);
+  });
+  document.getElementById("pickCount").textContent = "0";
+  syncStartBtn();
+}
+function syncStartBtn() {
+  const b = document.getElementById("btnStart");
+  b.disabled = picks.length !== 3;
+  b.textContent = (mode === "pvp" && pickSide === "B") ? "黑方选好，换白方" : "开始对局";
+}
+function aiLoadout(n) {
+  // 按职能分组挑选，保证 AI 的技能搭配成型，而不是随机凑数
+  const GROUPS = [
+    ["夺石", "反制", "夺魂"],                    // 拆子：破对方攻势
+    ["双落", "连弩", "克隆"],                    // 进攻：一手造双杀
+    ["天雷", "十字封印", "封锁", "壁垒"],        // 区域控制：掐要点 / 清场
+    ["冰封", "铁索", "回溯", "净化"],            // 压制：冻住对方连子
+    ["护盾", "墓碑", "蓄力", "换位", "献祭", "挪移"],  // 功能与续航
+  ];
+  const need = Math.max(1, n), pick = [];
+  for (const g of GROUPS) {
+    if (pick.length >= need) break;
+    const cand = g.filter(x => pick.indexOf(x) < 0);
+    if (!cand.length) continue;
+    pick.push(cand[Math.floor(Math.random() * Math.min(3, cand.length))]);
+  }
+  const rest = AI_POOL.filter(x => pick.indexOf(x) < 0);
+  while (pick.length < need && rest.length) {
+    pick.push(rest.splice(Math.floor(Math.random() * rest.length), 1)[0]);
+  }
+  return pick.slice(0, need);
+}
+function aiSkillCount(diff) { return diff <= 1 ? 4 : (diff === 2 ? 6 : 8); }
+document.querySelectorAll("#diff button").forEach(b => b.addEventListener("click", () => {
+  if (mode === "ai" && document.getElementById("modal").classList.contains("show")) {
+    aiPickCache = aiLoadout(aiSkillCount(difficulty));
+    document.getElementById("aiPickTxt").innerHTML =
+      `${aiPickCache.join("、")} <b style="color:#7d5ba6">（${aiPickCache.length} 个）</b>`;
+  }
+}));
+document.getElementById("btnStart").onclick = () => {
+  if (picks.length !== 3) return;
+  if (mode === "pvp" && pickSide === "B") {
+    pvpLoadouts.B = picks.slice();
+    picks = []; pickSide = "W";
+    document.getElementById("pickTitle").textContent = "⚪ 白方选 3 个技能";
+    document.getElementById("aiPickTxt").innerHTML =
+      `黑方已选：${pvpLoadouts.B.join("、")}`;
+    renderPickGrid();
+    return;
+  }
+  document.getElementById("modal").classList.remove("show");
+  if (mode === "pvp") {
+    pvpLoadouts.W = picks.slice();
+    startGame(pvpLoadouts.B, pvpLoadouts.W, difficulty);
+  } else {
+    if (!aiPickCache) aiPickCache = aiLoadout(aiSkillCount(difficulty));
+    startGame(picks.slice(), aiPickCache.slice(), difficulty);
+  }
+};
+
+/* 规则说明 */
+(function rules() {
+  const ul = document.getElementById("ruleList");
+  ul.innerHTML = `<li><b>胜利</b>：横、竖、斜任意方向连成 5 子及以上（被冰冻的子不计入）。</li>` +
+    SKILL_NAMES.map(n => `<li><b>${n}</b>（CD ${SKILLS[n].cd}）：${SKILLS[n].ds}</li>`).join("") +
+    `<li>每回合：落一子 + 可选一个技能；技能用完进入 CD，每过自己一个回合减 1。</li>`;
+})();
+
+/* ==================== 启动 ==================== */
+(function initMode() {
+  document.querySelectorAll("#mode button").forEach(x => x.classList.toggle("on", x.dataset.m === mode));
+  document.getElementById("diffSect").style.display = mode === "ai" ? "" : "none";
+  document.getElementById("diff").style.display = mode === "ai" ? "" : "none";
+})();
+startGame([], [], difficulty);
+setTimeout(showPick, 60);
+</script>
+</body>
+</html>
